@@ -1,0 +1,6 @@
+*.o
+*.so
+mapreduce-simple
+mapreduce-simple-out
+out
+tags
