@@ -34,13 +34,7 @@ int resultLessThan(const void * a, const void * b)
 
 void addResult(Results * buf, Result elem)
 {
-    if (buf->len + 1 > buf->cap)
-    {
-        buf->cap = buf->cap == 0 ? 4 : buf->cap * 2;
-        buf->data = realloc(buf->data, buf->cap * sizeof(Result));
-        if (buf->data == NULL) die("appendResult");
-    }
-    buf->data[buf->len++] = elem;
+    ARRAY_APPEND(buf->data, buf->len, buf->cap, elem);
 }
 
 void freeResults(Results * buf)
@@ -49,6 +43,19 @@ void freeResults(Results * buf)
         freeResult(&buf->data[i]);
     free(buf->data);
     *buf = (Results){0};
+}
+
+int getEnvOr(const char * name, int defaultValue)
+{
+    char * value = getenv(name);
+    if (value == NULL)
+        return defaultValue;
+
+    char * endptr;
+    int num = strtol(value, &endptr, 10);
+    if (endptr == value || errno == ERANGE)
+        die("could not parse environment variable '%s' value: %s", name, value);
+    return num;
 }
 
 void die(const char * fmt, ...)

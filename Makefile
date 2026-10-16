@@ -1,22 +1,30 @@
 CFLAGS = -g -Wall -Wextra -pedantic-errors
 
 DEST = out
-OBJS = $(addprefix $(DEST)/, mapreduce-utils.o)
+DEPS = $(addprefix $(DEST)/, mapreduce-utils.o)
+OBJS = $(addprefix $(DEST)/, wordcounter.so mapreduce-simple mapreduce-server)
 
-all: wordcounter mapreduce-simple
+all: rpc $(OBJS)
 
 $(DEST):
 	mkdir -p $(DEST)
 
-$(DEST)/%.o: %.c %.h | $(DEST)
-	$(CC) $(CFLAGS) -o $@ -c $< -ldl
+$(DEST)/mapreduce-utils.o: mapreduce-utils.c mapreduce-utils.h | $(DEST)
+	$(CC) $(CFLAGS) -o $@ -c mapreduce-utils.c
 
-wordcounter: wordcounter.h wordcounter.c $(OBJS) | $(DEST)
-	$(CC) $(CFLAGS) -shared -o $(DEST)/wordcounter.so wordcounter.c $(OBJS)
+$(DEST)/wordcounter.so: wordcounter.h wordcounter.c $(DEPS) | $(DEST)
+	$(CC) $(CFLAGS) -shared -o $@ wordcounter.c $(DEPS)
 
-mapreduce-simple: mapreduce-simple.c $(OBJS) | $(DEST)
-	$(CC) $(CFLAGS) -rdynamic -o $(DEST)/mapreduce-simple mapreduce-simple.c $(OBJS) -ldl
+$(DEST)/mapreduce-%: mapreduce-%.c $(DEPS) | $(DEST)
+	$(CC) $(CFLAGS) -rdynamic -o $@ $< $(DEPS) -ldl
 
-.PHONY: clean
+rpc:
+	$(MAKE) CFLAGS="$(CFLAGS)" -C rpc
+
 clean:
-	rm -f $(OBJS) $(DEST)/wordcounter.so $(DEST)/mapreduce-simple
+	rm -f $(DEPS) $(OBJS)
+	rmdir $(DEST)
+
+	$(MAKE) -C rpc clean
+
+.PHONY: clean rpc
