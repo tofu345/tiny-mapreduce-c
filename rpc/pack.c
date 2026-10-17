@@ -1,10 +1,11 @@
 #include "pack.h"
 
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
+#include <sys/param.h>
 
 void pack_u16(uint8_t * buf, uint16_t n)
 {
@@ -50,7 +51,7 @@ uint64_t unpack_u64(uint8_t * buf)
     }
 }
 
-uint32_t pack(uint8_t * buf, char * fmt, ...)
+uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
 {
     va_list ap;
 
@@ -62,47 +63,53 @@ uint32_t pack(uint8_t * buf, char * fmt, ...)
     const char * s;
     uint16_t len;
 
-    uint32_t size = 0;
+    uint32_t i = 0;
     va_start(ap, fmt);
 
     for (; *fmt != 0; fmt++) {
         switch (*fmt)
         {
             case 'b': // 8-bit
-                size += 1;
+                if (i + 1 > buflen) return i;
                 b = (uint8_t)va_arg(ap, unsigned int); // promoted
-                *buf++ = b;
+                buf[i] = b;
+                i++;
                 break;
 
             case 'h': // 16-bit
-                size += 2;
+                if (i + 2 > buflen) return i;
                 h = (uint16_t)va_arg(ap, unsigned int); // promoted
-                pack_u16(buf, h);
-                buf += 2;
+                pack_u16(&buf[i], h);
+                i += 2;
                 break;
 
             case 'l': // 32-bit
-                size += 4;
+                if (i + 4 > buflen) return i;
                 l = (uint32_t)va_arg(ap, uint32_t);
-                pack_u32(buf, l);
-                buf += 4;
+                pack_u32(&buf[i], l);
+                i += 4;
                 break;
 
             case 'q': // 64-bit
-                size += 8;
+                if (i + 8 > buflen) return i;
                 q = (uint64_t)va_arg(ap, uint64_t);
-                pack_u64(buf, q);
-                buf += 8;
+                pack_u64(&buf[i], q);
+                i += 8;
                 break;
 
             case 's': // string
+                if (i + 2 > buflen) return i;
                 s = va_arg(ap, char *);
                 len = strlen(s);
-                size += len + 2;
-                pack_u16(buf, len);
-                buf += 2;
-                memcpy(buf, s, len);
-                buf += len;
+                if (i + len > buflen) {
+                    len = buflen - i;
+                    if (len == 0) return i;
+                }
+
+                pack_u16(&buf[i], len);
+                i += 2;
+                memcpy(&buf[i], s, len);
+                i += len;
                 break;
 
             default:
@@ -112,10 +119,10 @@ uint32_t pack(uint8_t * buf, char * fmt, ...)
     }
 
     va_end(ap);
-    return size;
+    return i;
 }
 
-void unpack(uint8_t * buf, char * fmt, ...)
+uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
 {
     va_list ap;
 
@@ -127,45 +134,57 @@ void unpack(uint8_t * buf, char * fmt, ...)
     char * s;
     uint16_t len, maxstrlen = 0;
 
+    uint32_t i = 0;
     va_start(ap, fmt);
 
     for (; *fmt != '\0'; fmt++) {
         switch (*fmt)
         {
             case 'b': // 8-bit
+                if (i + 1 > buflen) return i;
                 b = va_arg(ap, uint8_t *);
-                *b = *buf++;
+                *b = buf[i];
+                i++;
                 break;
 
             case 'h': // 16-bit
+                if (i + 2 > buflen) return i;
                 h = va_arg(ap, uint16_t *);
-                *h = unpack_u16(buf);
-                buf += 2;
+                *h = unpack_u16(&buf[i]);
+                i += 2;
                 break;
 
             case 'l': // 32-bit
+                if (i + 4 > buflen) return i;
                 l = va_arg(ap, uint32_t *);
-                *l = unpack_u32(buf);
-                buf += 4;
+                *l = unpack_u32(&buf[i]);
+                i += 4;
                 break;
 
             case 'q': // 64-bit
+                if (i + 8 > buflen) return i;
                 q = va_arg(ap, uint64_t *);
-                *q = unpack_u64(buf);
-                buf += 8;
+                *q = unpack_u64(&buf[i]);
+                i += 8;
                 break;
 
             case 's': // string
-                s = va_arg(ap, char *);
-                len = unpack_u16(buf);
-                buf += 2;
+                if (i + 2 > buflen) return i;
+                len = unpack_u16(&buf[i]);
+                i += 2;
                 if (maxstrlen > 0 && len > maxstrlen) {
                     len = maxstrlen - 1;
                     maxstrlen = 0; // reset max str len
                 }
-                memcpy(s, buf, len);
+                if (i + len > buflen) {
+                    len = buflen - i;
+                    if (len == 0) return i;
+                }
+
+                s = va_arg(ap, char *);
+                memcpy(s, &buf[i], len);
                 s[len] = '\0';
-                buf += len;
+                i += len;
                 break;
 
             default:
@@ -174,17 +193,17 @@ void unpack(uint8_t * buf, char * fmt, ...)
                 }
         }
     }
+
+    return i;
 }
 
-uint32_t pack_cstring(uint8_t * buf, void * data)
+uint32_t pack_cstring(uint8_t * buf, uint32_t len, void * data)
 {
-    return pack(buf, "s", data);
+    return pack(buf, len, "s", data);
 }
 
 int unpack_cstring(uint8_t * response, uint32_t len, void * result)
 {
-    char fmt[16];
-    snprintf(fmt, sizeof fmt, "%d" "s", len);
-    unpack(response, fmt, result);
+    unpack(response, len, "s", result);
     return 0;
 }

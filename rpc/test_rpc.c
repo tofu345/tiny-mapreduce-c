@@ -47,31 +47,6 @@ exit:
     return NULL;
 }
 
-uint32_t reverse(uint8_t * data, uint32_t argslen)
-{
-    (void)argslen;
-
-    uint16_t strLen = 0;
-    unpack(data, "h", &strLen);
-
-    if (strLen > RPC_PROC_BUFLEN) {
-        char * s = "data too long";
-        return pack(data, "s", s);
-    }
-
-    char s[strLen + 1];
-    unpack(data, "s", s);
-
-    uint32_t i = 0, j = strLen - 1;
-    for (; i < j; i++, j--) {
-        char tmp = s[i];
-        s[i] = s[j];
-        s[j] = tmp;
-    }
-
-    return pack(data, "s", s);
-}
-
 int main(void)
 {
     int sockets[2];
@@ -103,7 +78,7 @@ int main(void)
         goto close;
     }
 
-    uint32_t resplen = reverse(buf, argslen);
+    uint32_t resplen = reverse(buf, sizeof buf, argslen);
     if (sendRpc(sockets[0], buf, resplen) == -1) {
         fprintf(stderr, "server: error sending response: %s\n",
                 strerror(errno));

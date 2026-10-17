@@ -18,9 +18,9 @@
  * of [argslen], storing its response back in [buf] and returning the length of
  * data to be sent.
  *
- * NOTE: the length of the buffer is RPC_PROC_BUFLEN, which should not be exceeded.
+ * NOTE: the length of the buffer is [buflen], which should not be exceeded.
  */
-typedef uint32_t Proc(uint8_t * buf, uint32_t argslen);
+typedef uint32_t Proc(uint8_t * buf, uint32_t buflen, uint32_t argslen);
 
 /*
  * Serve an RPC server on [ai] with [procs].

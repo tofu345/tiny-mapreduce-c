@@ -60,15 +60,17 @@ int recvRpc(int sock, uint32_t * procnum, uint32_t * argslen,
     if (strncmp((char *)buf, "RPC", 3) != 0)
         return -3;
 
+    assert(procnum != NULL && argslen != NULL);
     *procnum = 0;
     *argslen = 0;
-    unpack(&buf[3], "ll", procnum, argslen);
+    unpack(&buf[3], RPC_INIT_PACKET_LENGTH - 3, "ll", procnum, argslen);
 
     if (*procnum >= maxprocs)
         return -4;
     if (*argslen > argbuflen)
         return -5;
 
+    assert(argbuf != NULL);
     size_t len = *argslen;
     if (len > 0 && recvall(sock, argbuf, &len) == -1)
         return -6;
@@ -79,7 +81,7 @@ int recvRpc(int sock, uint32_t * procnum, uint32_t * argslen,
 int sendRpc(int sock, uint8_t * resp, uint32_t resplen)
 {
     uint8_t buf[sizeof(uint32_t)];
-    uint32_t size = pack(buf, "l", resplen);
+    uint32_t size = pack(buf, sizeof buf, "l", resplen);
 
     // send response length
     ssize_t n;
@@ -141,7 +143,7 @@ void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs)
 
         printf("serveRpc: (fd %d) calling procedure %d\n", conn, procnum);
 
-        uint32_t resplen = procs[procnum](buf, argslen);
+        uint32_t resplen = procs[procnum](buf, RPC_PROC_BUFLEN, argslen);
         if (sendRpc(conn, buf, resplen) == -1) {
             fprintf(stderr, "serveRpc: (fd %d) error sending response: %s\n",
                     conn, strerror(errno));

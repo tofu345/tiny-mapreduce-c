@@ -38,7 +38,7 @@ static int initRPC(int sock, uint32_t procnum, uint32_t argslen)
     uint8_t buf[RPC_INIT_PACKET_LENGTH];
 
     strcpy((char *)buf, "RPC");
-    pack(&buf[3], "ll", procnum, argslen);
+    pack(&buf[3], RPC_INIT_PACKET_LENGTH - 3, "ll", procnum, argslen);
 
     // send initial rpc packet
     if ((n = send(sock, buf, RPC_INIT_PACKET_LENGTH, 0)) == -1
@@ -58,7 +58,7 @@ int callRpc(int sock, uint32_t procnum, void * args, uint8_t * buf,
     assert(result != NULL && "callRpc: result should not be NULL");
 
     // pack arguments
-    uint32_t argslen = packer(buf, args);
+    uint32_t argslen = packer(buf, buflen, args);
 
     // send initial packet
     if (initRPC(sock, procnum, argslen) == -1)
@@ -77,10 +77,10 @@ int callRpc(int sock, uint32_t procnum, void * args, uint8_t * buf,
         return -2;
 
     uint32_t resplen = 0;
-    unpack(buf, "l", &resplen);
-    resplen = MIN(resplen, buflen);
+    unpack(buf, buflen, "l", &resplen);
 
     // recieve response
+    resplen = MIN(resplen, buflen);
     if (resplen > 0) {
         len = resplen;
         if (recvall(sock, buf, &len) == -1)

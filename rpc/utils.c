@@ -1,5 +1,7 @@
 #include "utils.h"
 
+#include "pack.h"
+
 #include <sys/types.h>
 #include <sys/socket.h>
 
@@ -35,4 +37,30 @@ int recvall(int s, uint8_t * buf, size_t * len)
 
     *len = total; // return number actually recieved here
     return n <= 0 ? -1 : 0; // return -1 on failure, 0 on success
+}
+
+uint32_t echo(uint8_t * buf, uint32_t buflen, uint32_t argslen)
+{
+    (void)buf; (void)buflen;
+    return argslen;
+}
+
+uint32_t reverse(uint8_t * buf, uint32_t buflen, uint32_t argslen)
+{
+    (void)argslen;
+
+    uint16_t strLen = 0;
+    unpack(buf, argslen, "h", &strLen);
+
+    char s[strLen + 1];
+    unpack(buf, argslen, "s", s);
+
+    uint32_t i = 0, j = strLen - 1;
+    for (; i < j; i++, j--) {
+        char tmp = s[i];
+        s[i] = s[j];
+        s[j] = tmp;
+    }
+
+    return pack(buf, buflen, "s", s);
 }

@@ -12,16 +12,16 @@
 #define _NotNull
 
 /*
- * The packer is responsible for pack()ing [data] and storing it in [buf].
- * Should return the length of data to send.
+ * The packer is responsible for pack()ing [data] and storing it in [buf] of
+ * [buflen].  Should return the length of data to send.
  */
-typedef uint32_t Packer(uint8_t * buf, void * data);
+typedef uint32_t Packer(uint8_t * buf, uint32_t buflen, void * data);
 
 /*
- * The unpacker is responsible for unpack()ing an RPC response from [buf] and
- * storing the data in [result].  Should return 0 on success.
+ * The unpacker is responsible for unpack()ing an RPC response from [buf] of
+ * [buflen] and storing the data in [result].  Should return 0 on success.
  */
-typedef int Unpacker(uint8_t * buf, uint32_t len, void * result);
+typedef int Unpacker(uint8_t * buf, uint32_t buflen, void * result);
 
 _Static_assert ((sizeof(uint16_t) == 2), "what kind of computer is this?");
 _Static_assert ((sizeof(size_t) > sizeof(uint32_t)), "32-bit? sorry");

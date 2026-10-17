@@ -23,37 +23,6 @@
 
 #define LENGTH(arr) (sizeof(arr) / sizeof(arr[0]))
 
-uint32_t echo(uint8_t * data, uint32_t argslen)
-{
-    (void)data;
-    return argslen;
-}
-
-uint32_t reverse(uint8_t * data, uint32_t argslen)
-{
-    (void)argslen;
-
-    uint16_t strLen = 0;
-    unpack(data, "h", &strLen);
-
-    if (strLen > RPC_PROC_BUFLEN) {
-        char * s = "data too long";
-        return pack(data, "s", s);
-    }
-
-    char s[strLen + 1];
-    unpack(data, "s", s);
-
-    uint32_t i = 0, j = strlen(s) - 1;
-    for (; i < j; i++, j--) {
-        char tmp = s[i];
-        s[i] = s[j];
-        s[j] = tmp;
-    }
-
-    return pack(data, "s", s);
-}
-
 Proc * procs[] = { echo, reverse };
 
 int main(int argc, char * argv[])

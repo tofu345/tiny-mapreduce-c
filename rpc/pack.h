@@ -10,7 +10,7 @@
 /*
 ** from https://beej.us/guide/bgnet/
 **
-** pack() -- store data dictated by the format string in the buffer
+** pack() -- store data dictated by the format string in [buf] of [buflen]
 **
 **   bits | unsigned  string
 **   -----+-----------------
@@ -22,13 +22,13 @@
 **
 **  (16-bit unsigned length is automatically prepended to strings)
 */
-uint32_t pack(uint8_t * buf, char * fmt, ...);
+uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 
 /*
 ** from https://beej.us/guide/bgnet/
 **
 ** unpack() -- unpack data dictated by the format string into the
-**             buffer
+**             [buf] of [buflen]
 **
 **   bits | unsigned  string
 **   -----+-----------------
@@ -41,9 +41,9 @@ uint32_t pack(uint8_t * buf, char * fmt, ...);
 **  (string is extracted based on its stored length, but 's' can be
 **  prepended with a maximum length)
 */
-void unpack(uint8_t * buf, char * fmt, ...);
+uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 
-uint32_t pack_cstring(uint8_t * buf, void * data);
+uint32_t pack_cstring(uint8_t * buf, uint32_t len, void * data);
 int unpack_cstring(uint8_t * response, uint32_t len, void * result);
 
 #endif // INCLUDE_RPC_PACK_H
