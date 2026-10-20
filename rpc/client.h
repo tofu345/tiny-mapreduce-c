@@ -11,23 +11,16 @@
 int connectTo(struct addrinfo * ai);
 
 /*
- * Pack [args] with [packer].  Call Remote procedure on [sock] with [procnum]
- * and packed [args] in [buf], the response is unpacked with [unpacker] and
- * stored in [result].
- *
- * Caveats:
- * - [buf] must be large enough to contain the packed arguments.
- * - [buf] must be large enough to contain the server response or it will be
- *   silently truncated.
+ * Call Remote procedure on [sock] with [procnum] and pack()ed arguments in
+ * [buf] of [argslen], the response is stored in [buf].
  *
  * Return values:
  *   0 ok
  *  -1 failed to send RPC
  *  -2 failed to recieve response
- *  -3 unpacker did not return 0
+ *  -3 response length greater than [buflen]
  */
-int callRpc(int sock, uint32_t procnum, void * args, uint8_t * buf, 
-            uint32_t buflen, Packer * packer, Unpacker * unpacker,
-            void * result);
+int callRpc(int sock, uint32_t procnum, uint32_t argslen, uint8_t * buf,
+            uint32_t buflen);
 
 #endif // INCLUDE_RPC_CLIENT_H

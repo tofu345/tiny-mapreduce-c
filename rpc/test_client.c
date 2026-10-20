@@ -60,15 +60,16 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    char result[1024];
-    if ((err = callRpc(sock, procnum, argv[3], buf, sizeof buf, &pack_cstring,
-                       &unpack_cstring, result)) != 0)
+    uint32_t argslen = pack(buf, sizeof buf, "s", argv[3]);
+    if ((err = callRpc(sock, procnum, argslen, buf, sizeof buf)) != 0)
     {
         fprintf(stderr, "test_client: callRpc error: %d (errno: %s)\n",
                 err, strerror(errno));
         return 1;
     }
 
+    char result[1024];
+    unpack(buf, sizeof buf, "s", result);
     printf("test_client: response '%s'\n", result);
 
     close(sock);

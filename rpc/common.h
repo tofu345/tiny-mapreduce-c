@@ -11,19 +11,8 @@
 #define _Nullable
 #define _NotNull
 
-/*
- * The packer is responsible for pack()ing [data] and storing it in [buf] of
- * [buflen].  Should return the length of data to send.
- */
-typedef uint32_t Packer(uint8_t * buf, uint32_t buflen, void * data);
-
-/*
- * The unpacker is responsible for unpack()ing an RPC response from [buf] of
- * [buflen] and storing the data in [result].  Should return 0 on success.
- */
-typedef int Unpacker(uint8_t * buf, uint32_t buflen, void * result);
-
 _Static_assert ((sizeof(uint16_t) == 2), "what kind of computer is this?");
-_Static_assert ((sizeof(size_t) > sizeof(uint32_t)), "32-bit? sorry");
+_Static_assert ((sizeof(size_t) > sizeof(uint32_t)),
+                "This has only been tested on a 64-bit system");
 
 #endif // INCLUDE_RPC_COMMON_H

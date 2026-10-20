@@ -26,14 +26,21 @@ void * client(void * arg)
     char * expectedResult = "ereht olleh";
 
     uint8_t buf[1024];
-    char result[1024];
-    int err = callRpc(sock, 0, message, buf, sizeof buf, &pack_cstring,
-                      &unpack_cstring, result);
+    uint32_t argslen = pack(buf, sizeof buf, "s", message);
+    if (argslen < strlen(message) + 2) {
+        fprintf(stderr, "client: buffer too small\n");
+        goto exit;
+    }
+
+    int err = callRpc(sock, 0, argslen, buf, sizeof buf);
     if (err != 0) {
         fprintf(stderr, "client: callRpc error: %d (errno: %s)\n",
                 err, strerror(errno));
         goto exit;
     }
+
+    char result[1024];
+    unpack(buf, sizeof buf, "s", result);
 
     if (strcmp(expectedResult, result) != 0) {
         fprintf(stderr, "client: invalid response, want '%s', got '%s'\n",

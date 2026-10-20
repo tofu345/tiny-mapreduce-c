@@ -51,6 +51,7 @@ uint32_t reverse(uint8_t * buf, uint32_t buflen, uint32_t argslen)
 
     uint16_t strLen = 0;
     unpack(buf, argslen, "h", &strLen);
+    if (strLen == 0) return 0;
 
     char s[strLen + 1];
     unpack(buf, argslen, "s", s);
