@@ -70,41 +70,38 @@ uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
         switch (*fmt)
         {
             case 'b': // 8-bit
-                if (i + 1 > buflen) return i;
+                if (i + 1 > buflen) goto error;
                 b = (uint8_t)va_arg(ap, unsigned int); // promoted
                 buf[i] = b;
                 i++;
                 break;
 
             case 'h': // 16-bit
-                if (i + 2 > buflen) return i;
+                if (i + 2 > buflen) goto error;
                 h = (uint16_t)va_arg(ap, unsigned int); // promoted
                 pack_u16(&buf[i], h);
                 i += 2;
                 break;
 
             case 'l': // 32-bit
-                if (i + 4 > buflen) return i;
+                if (i + 4 > buflen) goto error;
                 l = (uint32_t)va_arg(ap, uint32_t);
                 pack_u32(&buf[i], l);
                 i += 4;
                 break;
 
             case 'q': // 64-bit
-                if (i + 8 > buflen) return i;
+                if (i + 8 > buflen) goto error;
                 q = (uint64_t)va_arg(ap, uint64_t);
                 pack_u64(&buf[i], q);
                 i += 8;
                 break;
 
             case 's': // string
-                if (i + 2 > buflen) return i;
+                if (i + 2 > buflen) goto error;
                 s = va_arg(ap, char *);
                 len = strlen(s);
-                if (i + len > buflen) {
-                    len = buflen - i;
-                    if (len == 0) return i;
-                }
+                if (i + len > buflen) goto error;
 
                 pack_u16(&buf[i], len);
                 i += 2;
@@ -120,6 +117,10 @@ uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
 
     va_end(ap);
     return i;
+
+error:
+    va_end(ap);
+    return buflen + 1;
 }
 
 uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
@@ -141,45 +142,42 @@ uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
         switch (*fmt)
         {
             case 'b': // 8-bit
-                if (i + 1 > buflen) return i;
+                if (i + 1 > buflen) goto error;
                 b = va_arg(ap, uint8_t *);
                 *b = buf[i];
                 i++;
                 break;
 
             case 'h': // 16-bit
-                if (i + 2 > buflen) return i;
+                if (i + 2 > buflen) goto error;
                 h = va_arg(ap, uint16_t *);
                 *h = unpack_u16(&buf[i]);
                 i += 2;
                 break;
 
             case 'l': // 32-bit
-                if (i + 4 > buflen) return i;
+                if (i + 4 > buflen) goto error;
                 l = va_arg(ap, uint32_t *);
                 *l = unpack_u32(&buf[i]);
                 i += 4;
                 break;
 
             case 'q': // 64-bit
-                if (i + 8 > buflen) return i;
+                if (i + 8 > buflen) goto error;
                 q = va_arg(ap, uint64_t *);
                 *q = unpack_u64(&buf[i]);
                 i += 8;
                 break;
 
             case 's': // string
-                if (i + 2 > buflen) return i;
+                if (i + 2 > buflen) goto error;
                 len = unpack_u16(&buf[i]);
                 i += 2;
                 if (maxstrlen > 0 && len > maxstrlen) {
                     len = maxstrlen - 1;
                     maxstrlen = 0; // reset max str len
                 }
-                if (i + len > buflen) {
-                    len = buflen - i;
-                    if (len == 0) return i;
-                }
+                if (i + len > buflen) goto error;
 
                 s = va_arg(ap, char *);
                 memcpy(s, &buf[i], len);
@@ -194,16 +192,10 @@ uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
         }
     }
 
+    va_end(ap);
     return i;
-}
 
-uint32_t pack_cstring(uint8_t * buf, uint32_t len, void * data)
-{
-    return pack(buf, len, "s", data);
-}
-
-int unpack_cstring(uint8_t * response, uint32_t len, void * result)
-{
-    unpack(response, len, "s", result);
-    return 0;
+error:
+    va_end(ap);
+    return buflen + 1;
 }

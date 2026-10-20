@@ -21,6 +21,9 @@
 **      - |             s
 **
 **  (16-bit unsigned length is automatically prepended to strings)
+**
+** returns the length of the data pack()ed into [buf] or [buflen] + 1 if
+** [buflen] is not large enough.
 */
 uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 
@@ -40,10 +43,10 @@ uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 **
 **  (string is extracted based on its stored length, but 's' can be
 **  prepended with a maximum length)
+**
+** returns the length of the data pack()ed into [buf] or [buflen] + 1 if
+** [buflen] is not large enough.
 */
 uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
-
-uint32_t pack_cstring(uint8_t * buf, uint32_t len, void * data);
-int unpack_cstring(uint8_t * response, uint32_t len, void * result);
 
 #endif // INCLUDE_RPC_PACK_H
