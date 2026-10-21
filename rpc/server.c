@@ -96,7 +96,8 @@ int sendRpc(int sock, uint8_t * resp, uint32_t resplen)
     return 0;
 }
 
-void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs)
+void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs,
+              uint8_t * buf, uint32_t buflen)
 {
     int sock = bindTo(ai);
     if (sock == -1) {
@@ -111,12 +112,6 @@ void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs)
 
     int r;
     char conn_str[INET6_ADDRSTRLEN];
-    uint8_t * buf = calloc(RPC_PROC_BUFLEN, sizeof(uint8_t));
-    if (buf == NULL) {
-        perror("serveRpc: allocate buffer");
-        exit(1);
-    }
-
     while (1)
     {
         struct sockaddr_storage conn_addr; // connector's address info
@@ -135,7 +130,7 @@ void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs)
 
         errno = 0;
         uint32_t procnum, argslen;
-        if ((r = recvRpc(conn, &procnum, &argslen, nprocs, buf, RPC_PROC_BUFLEN)) < 0) {
+        if ((r = recvRpc(conn, &procnum, &argslen, nprocs, buf, buflen)) < 0) {
             fprintf(stderr, "serveRpc: (fd %d) recvRpc error: %d (errno: %s)\n",
                     conn, r, strerror(errno));
             goto close;
@@ -143,7 +138,7 @@ void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs)
 
         printf("serveRpc: (fd %d) calling procedure %d\n", conn, procnum);
 
-        uint32_t resplen = procs[procnum](buf, RPC_PROC_BUFLEN, argslen);
+        uint32_t resplen = procs[procnum](buf, buflen, argslen);
         if (sendRpc(conn, buf, resplen) == -1) {
             fprintf(stderr, "serveRpc: (fd %d) error sending response: %s\n",
                     conn, strerror(errno));

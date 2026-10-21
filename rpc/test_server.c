@@ -45,7 +45,8 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    serveRpc(servinfo, procs, LENGTH(procs));
+    uint8_t buf[4096];
+    serveRpc(servinfo, procs, LENGTH(procs), buf, sizeof buf);
 
     freeaddrinfo(servinfo);
     fprintf(stderr, "serveRpc should not return");

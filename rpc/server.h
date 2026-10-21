@@ -7,12 +7,6 @@
 #include "utils.h"
 #include "common.h"
 
-// The size of the buffer serveRpc() will use to recieve RPC arguments and send
-// responses to clients.
-#ifndef RPC_PROC_BUFLEN
-#   define RPC_PROC_BUFLEN 1024
-#endif
-
 /*
  * An RPC procedure, it is responsible for unpacking its arguments from [buf]
  * of [argslen], storing its response back in [buf] and returning the length of
@@ -23,9 +17,11 @@
 typedef uint32_t Proc(uint8_t * buf, uint32_t buflen, uint32_t argslen);
 
 /*
- * Serve an RPC server on [ai] with [procs].
+ * Serve an RPC server on [ai] with [procs].  [buf] will be used for passing
+ * arguments and storing responses
  */
-void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs);
+void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs,
+              uint8_t * buf, uint32_t buflen);
 
 /*
  * Return values:

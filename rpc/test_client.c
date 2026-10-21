@@ -17,7 +17,7 @@
 
 int main(int argc, char * argv[])
 {
-    uint8_t buf[1024];
+    uint8_t buf[4096];
     uint32_t procnum;
     int sock, err;
     char * endptr;

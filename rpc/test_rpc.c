@@ -49,7 +49,6 @@ void * client(void * arg)
     }
 
 exit:
-    // free(result);
     close(sock);
     return NULL;
 }
