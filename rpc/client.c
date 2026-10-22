@@ -32,7 +32,7 @@ int connectTo(struct addrinfo * ai)
     return sock;
 }
 
-static int initRPC(int sock, uint32_t procnum, uint32_t argslen)
+static int initRPC(int sock, RpcInt procnum, RpcInt argslen)
 {
     ssize_t n;
     uint8_t buf[RPC_INIT_PACKET_LENGTH];
@@ -48,7 +48,7 @@ static int initRPC(int sock, uint32_t procnum, uint32_t argslen)
     return 0;
 }
 
-int callRpc(int sock, uint32_t procnum, uint32_t argslen, uint8_t * buf,
+int callRpc(int sock, RpcInt procnum, RpcInt argslen, uint8_t * buf,
             uint32_t buflen)
 {
     size_t len;
@@ -66,11 +66,11 @@ int callRpc(int sock, uint32_t procnum, uint32_t argslen, uint8_t * buf,
     }
 
     // recieve response length
-    if ((n = recv(sock, buf, sizeof(uint32_t), 0)) == -1
-            || n != sizeof(uint32_t))
+    if ((n = recv(sock, buf, sizeof(RpcInt), 0)) == -1
+            || n != sizeof(RpcInt))
         return -2;
 
-    uint32_t resplen = 0;
+    RpcInt resplen = 0;
     unpack(buf, buflen, "l", &resplen);
     if (resplen > buflen) return -3;
 

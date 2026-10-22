@@ -18,7 +18,7 @@
 int main(int argc, char * argv[])
 {
     uint8_t buf[4096];
-    uint32_t procnum;
+    RpcInt procnum;
     int sock, err;
     char * endptr;
     struct addrinfo hints, *ai;
@@ -36,7 +36,7 @@ int main(int argc, char * argv[])
     }
 
     errno = 0;
-    procnum = (uint32_t)strtol(argv[2], &endptr, 0);
+    procnum = (RpcInt)strtol(argv[2], &endptr, 0);
     if (endptr == argv[2]) {
         fprintf(stderr, "could not parse as integer: %s\n", argv[2]);
         return 1;
@@ -60,7 +60,7 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    uint32_t argslen = pack(buf, sizeof buf, "s", argv[3]);
+    RpcInt argslen = pack(buf, sizeof buf, "s", argv[3]);
     if ((err = callRpc(sock, procnum, argslen, buf, sizeof buf)) != 0)
     {
         fprintf(stderr, "test_client: callRpc error: %d (errno: %s)\n",

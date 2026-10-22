@@ -26,7 +26,7 @@ void * client(void * arg)
     char * expectedResult = "ereht olleh";
 
     uint8_t buf[1024];
-    uint32_t argslen = pack(buf, sizeof buf, "s", message);
+    RpcInt argslen = pack(buf, sizeof buf, "s", message);
     if (argslen < strlen(message) + 2) {
         fprintf(stderr, "client: buffer too small\n");
         goto exit;
@@ -57,7 +57,7 @@ int main(void)
 {
     int sockets[2];
     uint8_t buf[1024];
-    uint32_t procnum, argslen;
+    RpcInt procnum, argslen;
     int ret;
     pthread_t thread;
 
@@ -84,7 +84,7 @@ int main(void)
         goto close;
     }
 
-    uint32_t resplen = reverse(buf, sizeof buf, argslen, NULL);
+    RpcInt resplen = reverse(buf, sizeof buf, argslen, NULL);
     if (sendRpc(sockets[0], buf, resplen) == -1) {
         fprintf(stderr, "server: error sending response: %s\n",
                 strerror(errno));

@@ -18,19 +18,18 @@ int bindTo(struct addrinfo * ai, int reuseaddr);
  *
  * NOTE: the length of the buffer is [buflen], which should not be exceeded.
  */
-typedef uint32_t Proc(uint8_t * buf, uint32_t buflen, uint32_t argslen, 
-                      void * arg);
+typedef RpcInt Proc(uint8_t * buf, RpcInt buflen, RpcInt argslen, void * arg);
 
 /*
- * Serve an RPC server on [ai] with [procs].  
+ * Serve an RPC server on [ai] with [procs].
  *
  * [buf] will be used for passing arguments and storing responses
  *
  * an arbitrary argument [arg] can be provided which will be passed to
  * any [procs].
  */
-void serveRpc(int sock, Proc * procs[], uint32_t nprocs, uint8_t * buf,
-              uint32_t buflen, void * arg);
+void serveRpc(int sock, Proc * procs[], RpcInt nprocs, uint8_t * buf,
+              RpcInt buflen, void * arg);
 
 /*
  * Return values:
@@ -42,8 +41,8 @@ void serveRpc(int sock, Proc * procs[], uint32_t nprocs, uint8_t * buf,
  *  -5 : argument size greater than [argbuflen]
  *  -6 : error reading arguments
  */
-int recvRpc(int sock, uint32_t * procnum, uint32_t * argslen,
-            uint32_t maxprocs, uint8_t * argbuf, size_t argbuflen);
-int sendRpc(int sock, uint8_t * resp, uint32_t resplen);
+int recvRpc(int sock, RpcInt * procnum, RpcInt * argslen,
+            RpcInt maxprocs, uint8_t * argbuf, size_t argbuflen);
+int sendRpc(int sock, uint8_t * resp, RpcInt resplen);
 
 #endif // INCLUDE_RPC_SERVER_H

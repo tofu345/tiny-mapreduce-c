@@ -20,7 +20,7 @@ int connectTo(struct addrinfo * ai);
  *  -2 failed to recieve response
  *  -3 response length greater than [buflen]
  */
-int callRpc(int sock, uint32_t procnum, uint32_t argslen, uint8_t * buf,
-            uint32_t buflen);
+int callRpc(int sock, RpcInt procnum, RpcInt argslen, uint8_t * buf,
+            RpcInt buflen);
 
 #endif // INCLUDE_RPC_CLIENT_H

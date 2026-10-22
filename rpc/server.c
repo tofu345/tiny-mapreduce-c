@@ -46,8 +46,8 @@ static void * getInAddr(struct sockaddr * sa)
     return &(((struct sockaddr_in6 *)sa)->sin6_addr);
 }
 
-int recvRpc(int sock, uint32_t * procnum, uint32_t * argslen,
-            uint32_t maxprocs, uint8_t * argbuf, size_t argbuflen)
+int recvRpc(int sock, RpcInt * procnum, RpcInt * argslen,
+            RpcInt maxprocs, uint8_t * argbuf, size_t argbuflen)
 {
     uint8_t buf[RPC_INIT_PACKET_LENGTH];
     ssize_t n;
@@ -77,10 +77,10 @@ int recvRpc(int sock, uint32_t * procnum, uint32_t * argslen,
     return 0;
 }
 
-int sendRpc(int sock, uint8_t * resp, uint32_t resplen)
+int sendRpc(int sock, uint8_t * resp, RpcInt resplen)
 {
     uint8_t buf[sizeof(uint32_t)];
-    uint32_t size = pack(buf, sizeof buf, "l", resplen);
+    RpcInt size = pack(buf, sizeof buf, "l", resplen);
 
     // send response length
     ssize_t n;
@@ -95,8 +95,8 @@ int sendRpc(int sock, uint8_t * resp, uint32_t resplen)
     return 0;
 }
 
-void serveRpc(int sock, Proc * procs[], uint32_t nprocs, uint8_t * buf,
-              uint32_t buflen, void * arg)
+void serveRpc(int sock, Proc * procs[], RpcInt nprocs, uint8_t * buf,
+              RpcInt buflen, void * arg)
 {
     if (listen(sock, /* connection backlog */ 10) == -1) {
         perror("serveRpc: listen");
@@ -122,7 +122,7 @@ void serveRpc(int sock, Proc * procs[], uint32_t nprocs, uint8_t * buf,
         printf("serveRpc: (fd %d) got connection from %s\n", conn, conn_str);
 
         errno = 0;
-        uint32_t procnum, argslen;
+        RpcInt procnum, argslen;
         if ((r = recvRpc(conn, &procnum, &argslen, nprocs, buf, buflen)) < 0) {
             fprintf(stderr, "serveRpc: (fd %d) recvRpc error: %d (errno: %s)\n",
                     conn, r, strerror(errno));
@@ -131,7 +131,7 @@ void serveRpc(int sock, Proc * procs[], uint32_t nprocs, uint8_t * buf,
 
         printf("serveRpc: (fd %d) calling procedure %d\n", conn, procnum);
 
-        uint32_t resplen = procs[procnum](buf, buflen, argslen, arg);
+        RpcInt resplen = procs[procnum](buf, buflen, argslen, arg);
         if (sendRpc(conn, buf, resplen) == -1) {
             fprintf(stderr, "serveRpc: (fd %d) error sending response: %s\n",
                     conn, strerror(errno));
