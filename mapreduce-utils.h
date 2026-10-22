@@ -4,6 +4,13 @@
 #include <stdint.h>
 #include <time.h>
 
+#include "rpc/server.h"
+
+typedef uint64_t WorkerId;
+
+#define SERVER_SOCK_NAME "/tmp/mapreduce-server"
+char * getWorkerSockName(WorkerId workerId);
+
 typedef struct {
     const char * key;
     const char * val;
@@ -22,7 +29,7 @@ typedef struct {
 void addResult(Results * buf, Result elem);
 void freeResults(Results * buf);
 
-int getEnvOr(const char * name, int defaultValue);
+int getEnvInt(const char * name, int defaultValue);
 
 typedef enum {
     FUNC_MAP,
@@ -36,7 +43,7 @@ typedef struct {
 
 typedef struct {
     uint64_t id;
-    uint64_t workerId;
+    WorkerId workerId;
     enum {
         TASK_IDLE,
         TASK_INPROGRESS,
@@ -46,18 +53,41 @@ typedef struct {
     time_t startedAt;
 
     MapOutput * mapOutputs;
-    uint64_t numMapOutputs;
+    uint32_t numMapOutputs;
 
     const char * inputPath;
     uint64_t inputOffset;
     uint64_t inputLength;
 } Task;
 
-#define ARRAY_APPEND(data, len, cap, elem)                          \
+_Static_assert ((sizeof(time_t) <= sizeof(uint64_t)),
+                "time_t must smaller than or equal to uint64_t, for packTask()");
+
+uint32_t packTask(uint8_t * buf, uint32_t len, Task * t);
+int unpackTask(uint8_t * buf, uint32_t len, Task * t);
+
+void freeMapOutputs(Task * t);
+
+typedef struct {
+    WorkerId workerId;
+} GetTaskArg;
+
+typedef struct {
+    Task task;
+} GetTaskReply;
+
+typedef struct {
+    Task task;
+} CompleteTaskArgs;
+
+uint32_t packGetTaskArg(uint8_t * buf, uint32_t len, GetTaskArg * data);
+int unpackGetTaskArg(uint8_t * buf, uint32_t len, GetTaskArg * result);
+
+#define ARRAY_APPEND(data, len, cap, elem, size)                    \
     if (len + 1 > cap)                                              \
     {                                                               \
         cap = cap == 0 ? 4 : cap * 2;                               \
-        data = realloc(data, cap * sizeof(elem));                   \
+        data = realloc(data, cap * size);                           \
         if (data == NULL) die("ARRAY_APPEND:");                     \
     }                                                               \
     data[len++] = elem;

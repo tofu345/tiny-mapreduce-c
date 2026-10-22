@@ -7,6 +7,8 @@
 #include "utils.h"
 #include "common.h"
 
+int bindTo(struct addrinfo * ai, int reuseaddr);
+
 /*
  * An RPC procedure, it is responsible for unpacking its arguments from [buf]
  * of [argslen], storing its response back in [buf] and returning the length of
@@ -27,8 +29,8 @@ typedef uint32_t Proc(uint8_t * buf, uint32_t buflen, uint32_t argslen,
  * an arbitrary argument [arg] can be provided which will be passed to
  * any [procs].
  */
-void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs,
-              uint8_t * buf, uint32_t buflen, void * arg);
+void serveRpc(int sock, Proc * procs[], uint32_t nprocs, uint8_t * buf,
+              uint32_t buflen, void * arg);
 
 /*
  * Return values:

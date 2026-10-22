@@ -45,10 +45,17 @@ int main(int argc, char * argv[])
         return 1;
     }
 
-    uint8_t buf[4096];
-    serveRpc(servinfo, procs, LENGTH(procs), buf, sizeof buf, NULL);
-
+    int sock = bindTo(servinfo, 1);
+    if (sock == -1) {
+        perror("serveRpc: bind to addrinfo");
+        exit(1);
+    }
     freeaddrinfo(servinfo);
+
+    uint8_t buf[4096];
+    serveRpc(sock, procs, LENGTH(procs), buf, sizeof buf, NULL);
+
     fprintf(stderr, "serveRpc should not return");
+    close(sock);
     return 1;
 }

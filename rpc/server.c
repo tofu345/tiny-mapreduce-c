@@ -11,17 +11,16 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-static int bindTo(struct addrinfo * ai)
+int bindTo(struct addrinfo * ai, int reuseaddr)
 {
     int sock;
-    int yes = 1;
     for (ai = ai; ai != NULL; ai = ai->ai_next) {
         if ((sock = socket(ai->ai_family, ai->ai_socktype,
                            ai->ai_protocol)) == -1) {
             continue;
         }
 
-        if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int)) == -1) {
+        if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuseaddr, sizeof(int)) == -1) {
             perror("setsockopt");
         }
 
@@ -96,15 +95,9 @@ int sendRpc(int sock, uint8_t * resp, uint32_t resplen)
     return 0;
 }
 
-void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs,
-              uint8_t * buf, uint32_t buflen, void * data)
+void serveRpc(int sock, Proc * procs[], uint32_t nprocs, uint8_t * buf,
+              uint32_t buflen, void * arg)
 {
-    int sock = bindTo(ai);
-    if (sock == -1) {
-        perror("serveRpc: bind to addrinfo");
-        exit(1);
-    }
-
     if (listen(sock, /* connection backlog */ 10) == -1) {
         perror("serveRpc: listen");
         exit(1);
@@ -138,7 +131,7 @@ void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs,
 
         printf("serveRpc: (fd %d) calling procedure %d\n", conn, procnum);
 
-        uint32_t resplen = procs[procnum](buf, buflen, argslen, data);
+        uint32_t resplen = procs[procnum](buf, buflen, argslen, arg);
         if (sendRpc(conn, buf, resplen) == -1) {
             fprintf(stderr, "serveRpc: (fd %d) error sending response: %s\n",
                     conn, strerror(errno));

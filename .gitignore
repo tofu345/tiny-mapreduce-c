@@ -2,5 +2,5 @@
 *.so
 mapreduce-simple
 mapreduce-simple-out
-out
+build
 tags
