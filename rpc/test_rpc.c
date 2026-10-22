@@ -84,7 +84,7 @@ int main(void)
         goto close;
     }
 
-    uint32_t resplen = reverse(buf, sizeof buf, argslen);
+    uint32_t resplen = reverse(buf, sizeof buf, argslen, NULL);
     if (sendRpc(sockets[0], buf, resplen) == -1) {
         fprintf(stderr, "server: error sending response: %s\n",
                 strerror(errno));

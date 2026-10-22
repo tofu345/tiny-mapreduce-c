@@ -39,15 +39,15 @@ int recvall(int s, uint8_t * buf, size_t * len)
     return n <= 0 ? -1 : 0; // return -1 on failure, 0 on success
 }
 
-uint32_t echo(uint8_t * buf, uint32_t buflen, uint32_t argslen)
+uint32_t echo(uint8_t * buf, uint32_t buflen, uint32_t argslen, void * arg)
 {
-    (void)buf; (void)buflen;
+    (void)buf; (void)buflen; (void)arg;
     return argslen;
 }
 
-uint32_t reverse(uint8_t * buf, uint32_t buflen, uint32_t argslen)
+uint32_t reverse(uint8_t * buf, uint32_t buflen, uint32_t argslen, void * arg)
 {
-    (void)argslen;
+    (void)argslen; (void)arg;
 
     uint16_t strLen = 0;
     unpack(buf, argslen, "h", &strLen);

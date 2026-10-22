@@ -97,7 +97,7 @@ int sendRpc(int sock, uint8_t * resp, uint32_t resplen)
 }
 
 void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs,
-              uint8_t * buf, uint32_t buflen)
+              uint8_t * buf, uint32_t buflen, void * data)
 {
     int sock = bindTo(ai);
     if (sock == -1) {
@@ -138,7 +138,7 @@ void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs,
 
         printf("serveRpc: (fd %d) calling procedure %d\n", conn, procnum);
 
-        uint32_t resplen = procs[procnum](buf, buflen, argslen);
+        uint32_t resplen = procs[procnum](buf, buflen, argslen, data);
         if (sendRpc(conn, buf, resplen) == -1) {
             fprintf(stderr, "serveRpc: (fd %d) error sending response: %s\n",
                     conn, strerror(errno));

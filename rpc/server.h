@@ -12,16 +12,23 @@
  * of [argslen], storing its response back in [buf] and returning the length of
  * data to be sent.
  *
+ * [arg] contains any arbitrary argument passed into serveRpc().
+ *
  * NOTE: the length of the buffer is [buflen], which should not be exceeded.
  */
-typedef uint32_t Proc(uint8_t * buf, uint32_t buflen, uint32_t argslen);
+typedef uint32_t Proc(uint8_t * buf, uint32_t buflen, uint32_t argslen, 
+                      void * arg);
 
 /*
- * Serve an RPC server on [ai] with [procs].  [buf] will be used for passing
- * arguments and storing responses
+ * Serve an RPC server on [ai] with [procs].  
+ *
+ * [buf] will be used for passing arguments and storing responses
+ *
+ * an arbitrary argument [arg] can be provided which will be passed to
+ * any [procs].
  */
 void serveRpc(struct addrinfo * ai, Proc * procs[], uint32_t nprocs,
-              uint8_t * buf, uint32_t buflen);
+              uint8_t * buf, uint32_t buflen, void * arg);
 
 /*
  * Return values:
