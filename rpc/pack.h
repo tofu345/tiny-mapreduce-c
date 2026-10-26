@@ -8,7 +8,7 @@
 #define IS_LITTLE_ENDIAN (*(char *)(int[]){ 1 })
 
 /*
-** from https://beej.us/guide/bgnet/
+** from https://beej.us/guide/bgnet/html/split/slightly-advanced-techniques.html#serialization
 **
 ** pack() -- store data dictated by the format string in [buf] of [buflen]
 **
@@ -28,7 +28,7 @@
 uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 
 /*
-** from https://beej.us/guide/bgnet/
+** from https://beej.us/guide/bgnet/html/split/slightly-advanced-techniques.html#serialization
 **
 ** unpack() -- unpack data dictated by the format string into the
 **             [buf] of [buflen]
