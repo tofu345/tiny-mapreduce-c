@@ -7,6 +7,8 @@
 // https://stackoverflow.com/a/8981006
 #define IS_LITTLE_ENDIAN (*(char *)(int[]){ 1 })
 
+// TODO: return 0 instead of [buflen] + 1
+
 /*
 ** from https://beej.us/guide/bgnet/html/split/slightly-advanced-techniques.html#serialization
 **
@@ -22,8 +24,7 @@
 **
 **  (16-bit unsigned length is automatically prepended to strings)
 **
-** returns the length of the data pack()ed into [buf] or [buflen] + 1 if
-** [buflen] is not large enough.
+** returns length of the data pack()ed or 0 if [buf] is not large enough.
 */
 uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 
@@ -44,8 +45,7 @@ uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 **  (string is extracted based on its stored length, but 's' can be
 **  prepended with a maximum length)
 **
-** returns the length of the data pack()ed into [buf] or [buflen] + 1 if
-** [buflen] is not large enough.
+** returns length of the data pack()ed or 0 if [buf] is not large enough.
 */
 uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 

@@ -120,7 +120,7 @@ uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
 
 error:
     va_end(ap);
-    return buflen + 1;
+    return 0;
 }
 
 uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
@@ -197,5 +197,5 @@ uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...)
 
 error:
     va_end(ap);
-    return buflen + 1;
+    return 0;
 }
