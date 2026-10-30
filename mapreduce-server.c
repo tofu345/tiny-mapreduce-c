@@ -17,12 +17,10 @@
 
 #include "mapreduce-utils.h"
 #include "rpc/pack.h"
+#include "data_structures/set.h"
 
-// in seconds
-#define TASK_TIMEOUT 10
+#define TASK_TIMEOUT 10 // seconds
 #define CHECK_INTERVAL 1
-
-// Stopped 1:16:24
 
 struct Tasks {
     Task * data;
@@ -42,8 +40,8 @@ void * startRequeueLoop(void * arg);
 void * rpcServer(void * arg);
 void serverFree(Server * s);
 
-uint32_t getTask(uint8_t * buf, uint32_t buflen, uint32_t argslen, void * arg);
-uint32_t completeTask(uint8_t * buf, uint32_t buflen, uint32_t argslen, void * arg);
+RpcInt getTask(uint8_t * buf, RpcInt buflen, RpcInt argslen, void * arg);
+RpcInt completeTask(uint8_t * buf, RpcInt buflen, RpcInt argslen, void * arg);
 
 Proc * procs[] = {
     getTask,
@@ -58,24 +56,15 @@ int main(int argc, char ** argv)
     Server s;
 
     if (argc < 2)
-    {
-        fprintf(stderr, "usage: mapreduce-server <inputfile> ...");
-        return 1;
-    }
+        die("usage: mapreduce-server <inputfile> ...");
 
     serverInit(&s, (const char **)&argv[1], argc - 1);
 
     ret = pthread_create(&requeuer, NULL, &startRequeueLoop, &s);
-    if (ret != 0) {
-        fprintf(stderr, "serverInit: pthread_create requeuer: %d", ret);
-        exit(1);
-    }
+    if (ret != 0)
+        die("pthread_create requeuer: %d", ret);
 
-    ret = pthread_create(&rpc, NULL, &rpcServer, NULL);
-    if (ret != 0) {
-        fprintf(stderr, "serverInit: pthread_create rpc: %d", ret);
-        exit(1);
-    }
+    RpcServer(&rpc, SERVER_SOCK_NAME, procs, nprocs);
 
     while (!done(&s)) {
         sleep(20);
@@ -89,36 +78,6 @@ int main(int argc, char ** argv)
     return 0;
 }
 
-void * rpcServer(void * arg)
-{
-    (void)arg;
-
-    int sock = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (sock == -1) {
-        perror("rpcServer: socket");
-        exit(1);
-    }
-
-    remove(SERVER_SOCK_NAME);
-
-    struct sockaddr_un name = {};
-    name.sun_family = AF_UNIX;
-    strncpy(name.sun_path, SERVER_SOCK_NAME, sizeof(name.sun_path) - 1);
-
-    int ret = bind(sock, (const struct sockaddr *) &name, sizeof(name));
-    if (ret == -1) {
-        perror("bind");
-        exit(EXIT_FAILURE);
-    }
-
-    uint8_t buf[4096];
-    serveRpc(sock, procs, nprocs, buf, sizeof buf, arg);
-
-    close(sock);
-    fprintf(stderr, "rpcServer: serveRpc should not return");
-    exit(1);
-}
-
 static void requeueTasks(struct Tasks * tasks, time_t now)
 {
     for (uint32_t i = 0; i < tasks->len; i++) {
@@ -129,7 +88,7 @@ static void requeueTasks(struct Tasks * tasks, time_t now)
                 printf("requeueing stale task %ld from worker %ld after %ld seconds\n",
                        t->id, t->workerId, time_elapsed);
                 t->status = TASK_DONE;
-                t->workerId = -1;
+                t->workerId = 0;
             }
         }
     }
@@ -215,14 +174,10 @@ void serverInit(Server * s, const char ** inputs, int numInputs)
     *s = (Server){};
     pthread_mutex_init(&s->mutex, NULL);
 
-    int numMapTasks = getEnvInt("MAPREDUCE_M", 8);
-    assert(numMapTasks > 0);
-    buildMapTasks(&s->mapTasks, inputs, numInputs, numMapTasks);
+    buildMapTasks(&s->mapTasks, inputs, numInputs, numMapTasks());
 
-    int numReduceTasks = getEnvInt("MAPREDUCE_R", 4);
-    assert(numReduceTasks > 0);
-
-    for (int i = 0; i < numReduceTasks; i++)
+    int n = numReduceTasks();
+    for (int i = 0; i < n; i++)
     {
         addTask(&s->reduceTasks, (Task){
             .id = i,
@@ -266,32 +221,23 @@ static Task * assignFrom(struct Tasks * tasks, uint64_t workerId)
     return NULL;
 }
 
-static bool contains(uint64_t * arr, uint32_t len, uint64_t n)
-{
-    for (uint32_t i = 0; i < len; i++)
-        if (arr[i] == n)
-            return true;
-    return false;
-}
-
 void mapWorkerLocations(Server * s, Task * task)
 {
-    // TODO: a hashmap would be _much_ better here
-    uint64_t * seen = NULL;
-    uint32_t seen_len = 0;
-    uint32_t seen_cap = 0;
+    Set set;
+    SetInit(&set);
 
     uint32_t capacity = 0;
     for (uint32_t i = 0; i < s->mapTasks.len; i++) {
         Task * t = &s->mapTasks.data[i];
-        if (!contains(seen, seen_len, t->workerId)) {
-            ARRAY_APPEND(seen, seen_len, seen_cap, t->workerId, sizeof(t->workerId));
+        if (!SetContains(&set, t->workerId)) {
+            SetInsert(&set, t->workerId);
 
             MapOutput m = { .path = getWorkerSockName(t->workerId) };
             ARRAY_APPEND(task->mapOutputs, task->numMapOutputs, capacity, m, sizeof(MapOutput));
         }
     }
-    free(seen);
+
+    SetFree(&set);
 }
 
 Task * assign(Server * s, WorkerId workerId)
@@ -327,7 +273,7 @@ void complete(Server * s, Task * t)
     if (t->funcType == FUNC_REDUCE) {
         tasks = &s->reduceTasks;
     }
-    if (t->id == (uint32_t)(-1) || t->id > tasks->len)
+    if (t->id == (uint64_t)(-1) || t->id > tasks->len)
         goto exit;
 
     Task * stored = &tasks->data[t->id];
@@ -345,11 +291,11 @@ exit:
     pthread_mutex_unlock(&s->mutex);
 }
 
-uint32_t getTask(uint8_t * buf, uint32_t buflen, uint32_t argslen, void * arg)
+RpcInt getTask(uint8_t * buf, RpcInt buflen, RpcInt argslen, void * arg)
 {
-    WorkerId workerId = -1;
+    WorkerId workerId = 0;
     unpack(buf, argslen, "q", &workerId);
-    if (workerId == (WorkerId)-1) return 0;
+    if (workerId == 0) return 0;
 
     Server * s = arg;
     Task * t = assign(s, workerId);
@@ -357,12 +303,12 @@ uint32_t getTask(uint8_t * buf, uint32_t buflen, uint32_t argslen, void * arg)
     if (t != NULL)
         reply = *t;
     else
-        reply = (Task){ .id = (uint32_t)-1 };
+        reply = (Task){ .id = (uint64_t)-1 };
 
     return packTask(buf, buflen, &reply);
 }
 
-uint32_t completeTask(uint8_t * buf, uint32_t buflen, uint32_t argslen, void * arg)
+RpcInt completeTask(uint8_t * buf, RpcInt buflen, RpcInt argslen, void * arg)
 {
     (void)buflen;
 
@@ -378,7 +324,14 @@ uint32_t completeTask(uint8_t * buf, uint32_t buflen, uint32_t argslen, void * a
 void serverFree(Server * s)
 {
     pthread_mutex_destroy(&s->mutex);
+
+    for (uint32_t i = 0; i < s->mapTasks.len; i++)
+        freeTask(&s->mapTasks.data[i]);
     free(s->mapTasks.data);
+
+    for (uint32_t i = 0; i < s->reduceTasks.len; i++)
+        freeTask(&s->reduceTasks.data[i]);
     free(s->reduceTasks.data);
+
     *s = (Server){0};
 }

@@ -49,4 +49,12 @@ uint32_t pack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 */
 uint32_t unpack(uint8_t * buf, uint32_t buflen, char * fmt, ...);
 
+// helper macro for chaining multiple pack()s or unpack()s
+#define CHAIN(p, buf, buflen, ...)                                            \
+    {                                                                         \
+        uint32_t n = p(buf, buflen, __VA_ARGS__);                             \
+        if (n == 0) return 0;                                                 \
+        buf += n; buflen -= n;                                                \
+    }
+
 #endif // INCLUDE_RPC_PACK_H

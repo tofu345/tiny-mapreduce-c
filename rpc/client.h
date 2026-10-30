@@ -14,6 +14,8 @@ int connectTo(struct addrinfo * ai);
  * Call Remote procedure on [sock] with [procnum] and pack()ed arguments in
  * [buf] of [argslen], the response is stored in [buf].
  *
+ * TODO: return a length of returned data
+ *
  * Return values:
  *   0 ok
  *  -1 failed to send RPC

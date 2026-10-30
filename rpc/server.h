@@ -28,8 +28,8 @@ typedef RpcInt Proc(uint8_t * buf, RpcInt buflen, RpcInt argslen, void * arg);
  * an arbitrary argument [arg] can be provided which will be passed to
  * any [procs].
  */
-void serveRpc(int sock, Proc * procs[], RpcInt nprocs, uint8_t * buf,
-              RpcInt buflen, void * arg);
+_Noreturn void serveRpc(int sock, Proc * procs[], RpcInt nprocs, uint8_t * buf,
+                        RpcInt buflen, void * arg);
 
 /*
  * Return values:

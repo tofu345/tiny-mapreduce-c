@@ -21,9 +21,8 @@ int main(int argc, char ** argv)
         return 1;
     }
 
-    int (*map)(char * data, uint64_t len, Results * results);
-    int (*reduce)(const char * key, Result * values, uint32_t valuesLen,
-                  char * outBuf, int outBufLen);
+    MapFunc * map;
+    ReduceFunc * reduce;
 
     Results results = {0};
     char * err;
